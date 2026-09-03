@@ -88,7 +88,7 @@ mesacne. Precitaj si sekciu **Naklady** nizsie **skor** ako to pustis medzi ludi
 ### 1. Stiahni a nainstaluj
 
 ```bash
-git clone https://github.com/POUZI-SVOJ-ODKAZ/ridea-starter.git
+git clone https://github.com/rodriguez-bit/ridea-starter.git
 cd ridea-starter
 npm install
 npx wrangler login
