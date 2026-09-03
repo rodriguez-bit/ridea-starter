@@ -6,6 +6,9 @@ vyhodnoti. Vsetko bezi na Cloudflare, na vlastnom ucte, s vlastnymi API klucmi.
 Toto je **startovacia kostra**, nie hotovy produkt. Zamerne je mala, aby si jej cely
 rozumel za pol hodinu a dalej si ju stavias sam (ideal s Claude Code, viz `CLAUDE.md`).
 
+Dizajn a UX prava tejto kostry (tokeny, komponenty, pravidla pre nove obrazovky)
+su v `DESIGN.md`.
+
 ---
 
 ## Na co to je

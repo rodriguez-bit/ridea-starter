@@ -43,7 +43,11 @@ src/
   routes/ideas.ts     CRUD, upload, audio, pipeline na pozadi
 migrations/           SQL migracie, cislovane
 public/               login.html, index.html, app.js, style.css
+DESIGN.md             dizajn tokeny, komponenty a UX pravidla frontendu
 ```
+
+Ked sa robi cokolvek na frontende (nova obrazovka, komponent, farba, stav
+async akcie), **najprv si precitaj `DESIGN.md`** a drz sa jeho pravidiel.
 
 ## Databaza
 
