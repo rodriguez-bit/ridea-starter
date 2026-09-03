@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prihlasenie</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="wrap" style="max-width:420px;padding-top:80px">
+    <h1 style="margin:0 0 6px">Ridea Starter</h1>
+    <p class="muted" style="margin:0 0 24px">Hlasove napady, prepis a AI analyza.</p>
+
+    <div class="card">
+      <form id="form">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="username" required>
+
+        <label for="password">Heslo</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+
+        <div style="margin-top:18px">
+          <button id="submit" type="submit" style="width:100%">Prihlasit sa</button>
+        </div>
+        <div id="msg" class="msg err"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('form');
+    const msg = document.getElementById('msg');
+    const btn = document.getElementById('submit');
+
+    if (localStorage.getItem('token')) location.href = '/';
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.classList.remove('show');
+      btn.disabled = true;
+      btn.textContent = 'Prihlasujem...';
+      try {
+        const resp = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+          }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Prihlasenie zlyhalo');
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        location.href = '/';
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.classList.add('show');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Prihlasit sa';
+      }
+    });
+  </script>
+</body>
+</html>

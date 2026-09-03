@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ridea Starter</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Ridea Starter</h1>
+    <div class="row">
+      <span class="who" id="who"></span>
+      <button class="ghost" id="logout">Odhlasit</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- Nahravanie -->
+    <div class="card center">
+      <div class="timer" id="timer">00:00</div>
+      <p class="muted" id="recHint">Klikni a rozprav svoj napad.</p>
+      <div class="row" style="justify-content:center">
+        <button class="big" id="recBtn">Nahravat</button>
+      </div>
+      <div style="max-width:420px;margin:16px auto 0;text-align:left">
+        <label for="title">Nazov (volitelne, AI ho doplni sama)</label>
+        <input id="title" type="text" placeholder="napr. Novy onboarding pre klientov">
+      </div>
+      <div id="recMsg" class="msg"></div>
+    </div>
+
+    <!-- Zoznam napadov -->
+    <div class="card">
+      <div class="row" style="margin-bottom:8px">
+        <strong>Napady</strong>
+        <div class="spacer"></div>
+        <button class="ghost" id="refresh">Obnovit</button>
+      </div>
+      <div id="list"><p class="muted">Nacitavam...</p></div>
+    </div>
+
+    <!-- Detail -->
+    <div class="card detail" id="detail"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

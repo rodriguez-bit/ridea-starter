@@ -1,0 +1,31 @@
+# Skopiruj na wrangler.toml a doplni vlastne ID-cka (viz README krok 3).
+# wrangler.toml je v .gitignore, aby si si omylom necommitol svoje ID-cka.
+
+name = "ridea-starter"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# npx wrangler d1 create ridea-starter  -> vypise database_id, vloz sem
+[[d1_databases]]
+binding = "DB"
+database_name = "ridea-starter"
+database_id = "SEM_VLOZ_SVOJE_DATABASE_ID"
+
+# npx wrangler r2 bucket create ridea-starter-audio
+[[r2_buckets]]
+binding = "AUDIO"
+bucket_name = "ridea-starter-audio"
+
+[observability.logs]
+enabled = true
+
+# POZOR: sem NEDAVAJ ziadne API kluce ani tajomstva.
+# Vars a secrets zdielaju v Cloudflare jeden namespace - hodnota z tohto suboru
+# prepise pri kazdom deployi to, co si nastavil cez `wrangler secret put`.
+[vars]
+CLAUDE_MODEL = "claude-haiku-4-5-20251001"

@@ -1,0 +1,18 @@
+# Skopiruj do .dev.vars (lokalny vyvoj) a doplni vlastne hodnoty.
+# .dev.vars je v .gitignore - NIKDY ho necommituj.
+# Na produkcii sa to iste nastavuje cez: npx wrangler secret put NAZOV
+
+# Povinne
+JWT_SECRET="vygeneruj-nahodny-retazec-min-32-znakov"
+ANTHROPIC_API_KEY="sk-ant-..."
+
+# Aspon jeden STT provider (ak das oba, ElevenLabs je primarny a Whisper fallback)
+ELEVENLABS_API_KEY="sk_..."
+OPENAI_API_KEY="sk-..."
+
+# Jednorazovy token na vytvorenie prveho admina (POST /api/bootstrap)
+BOOTSTRAP_TOKEN="nahodny-retazec-ktory-po-setupe-zmazes"
+
+# Volitelne
+CLAUDE_MODEL="claude-haiku-4-5-20251001"
+STT_DISABLED=""
