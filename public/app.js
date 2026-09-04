@@ -203,7 +203,7 @@ async function showDetail(id) {
       ${audioUrl ? `<audio controls src="${audioUrl}" style="width:100%;margin:12px 0"></audio>` : ''}
 
       ${a ? `
-        <p><strong>Skore ${a.score}/10</strong> &middot; ${escapeHtml(a.category || '')}</p>
+        <p><strong>Skore ${Number.isFinite(Number(a.score)) ? Math.round(Number(a.score)) : '?'}/10</strong> &middot; ${escapeHtml(a.category || '')}</p>
         <p>${escapeHtml(a.summary || '')}</p>
         ${listOf('Silne stranky', a.strengths)}
         ${listOf('Rizika', a.weaknesses)}

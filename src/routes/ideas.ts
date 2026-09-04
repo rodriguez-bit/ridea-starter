@@ -2,6 +2,15 @@ import { Hono } from 'hono';
 import { authMiddleware } from '../middleware/auth';
 import { transcribe, cleanHallucinations, isGibberish, MAX_AUDIO_BYTES } from '../lib/stt';
 import { analyzeTranscript } from '../lib/analysis';
+import {
+  CLAUDE_RESERVE_MICRO,
+  STT_MICRO_PER_MIN,
+  claudeCostMicro,
+  estimateMinutes,
+  releaseSpend,
+  reserveSpend,
+  settleSpend,
+} from '../lib/spend';
 import type { Env, User } from '../types';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User } }>();
@@ -41,7 +50,10 @@ app.get('/', async (c) => {
     const { results } = await c.env.DB.prepare(sql).bind(...args).all();
     return c.json({ ok: true, data: results });
   } catch (e: unknown) {
-    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
+    // Interne chyby (SQL, upstream) nepatria do odpovede - vidiet ich v
+    // `npx wrangler tail`.
+    console.error(e);
+    return c.json({ error: 'Chyba servera' }, 500);
   }
 });
 
@@ -61,7 +73,10 @@ app.get('/:id', async (c) => {
     }
     return c.json({ ok: true, data: row });
   } catch (e: unknown) {
-    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
+    // Interne chyby (SQL, upstream) nepatria do odpovede - vidiet ich v
+    // `npx wrangler tail`.
+    console.error(e);
+    return c.json({ error: 'Chyba servera' }, 500);
   }
 });
 
@@ -89,7 +104,10 @@ app.get('/:id/audio', async (c) => {
       },
     });
   } catch (e: unknown) {
-    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
+    // Interne chyby (SQL, upstream) nepatria do odpovede - vidiet ich v
+    // `npx wrangler tail`.
+    console.error(e);
+    return c.json({ error: 'Chyba servera' }, 500);
   }
 });
 
@@ -135,7 +153,10 @@ app.post('/', async (c) => {
 
     return c.json({ ok: true, id: ideaId, status: 'processing' });
   } catch (e: unknown) {
-    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
+    // Interne chyby (SQL, upstream) nepatria do odpovede - vidiet ich v
+    // `npx wrangler tail`.
+    console.error(e);
+    return c.json({ error: 'Chyba servera' }, 500);
   }
 });
 
@@ -157,7 +178,10 @@ app.delete('/:id', async (c) => {
     await c.env.DB.prepare('DELETE FROM ideas WHERE id = ?').bind(c.req.param('id')).run();
     return c.json({ ok: true });
   } catch (e: unknown) {
-    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
+    // Interne chyby (SQL, upstream) nepatria do odpovede - vidiet ich v
+    // `npx wrangler tail`.
+    console.error(e);
+    return c.json({ error: 'Chyba servera' }, 500);
   }
 });
 
@@ -180,8 +204,20 @@ async function processIdea(
     // nie cez wrangler.toml [vars] (deploy by ho prepisal spat).
     if (env.STT_DISABLED === '1') return fail('STT je docasne vypnuty (STT_DISABLED=1)');
 
+    // Prepis: rezervuj konzervativny odhad PRED volanim. Dlzku este nepozname,
+    // tak ju odhadneme z velkosti suboru a po odpovedi rezervaciu opravime.
+    const sttReserve = estimateMinutes(bytes.byteLength) * STT_MICRO_PER_MIN;
+    const sttBudget = await reserveSpend(env, sttReserve);
+    if (!sttBudget.ok) return fail(sttBudget.error || 'Denny rozpocet je vycerpany');
+
     const stt = await transcribe(bytes, key, env);
-    if (!stt.ok) return fail(stt.error || 'STT zlyhalo');
+    if (!stt.ok) {
+      await releaseSpend(env, sttReserve);
+      return fail(stt.error || 'STT zlyhalo');
+    }
+    // Realna cena podla dlzky audia, ktoru vratila sluzba.
+    const sttMinutes = Math.max(1, Math.ceil((stt.duration ?? 0) / 60));
+    await settleSpend(env, sttReserve, sttMinutes * STT_MICRO_PER_MIN);
 
     const transcript = cleanHallucinations(stt.text || '');
     if (!transcript) return fail('Prazdny prepis - nahravka je ticha alebo prilis kratka');
@@ -191,10 +227,31 @@ async function processIdea(
       .prepare("SELECT value FROM company_context WHERE key = 'context'")
       .first<{ value: string }>();
 
+    const aiBudget = await reserveSpend(env, CLAUDE_RESERVE_MICRO);
+    if (!aiBudget.ok) {
+      // Prepis mame, ulozime ho - analyza sa da spustit znova zajtra.
+      await env.DB
+        .prepare(`UPDATE ideas SET transcript=?, duration_sec=?, status='error',
+                  error_message=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
+        .bind(transcript, stt.duration ?? null, (aiBudget.error || 'Denny rozpocet je vycerpany').slice(0, 500), ideaId)
+        .run();
+      return;
+    }
+
     const ai = await analyzeTranscript(transcript, env.ANTHROPIC_API_KEY, {
       model: env.CLAUDE_MODEL,
       companyContext: ctxRow?.value,
     });
+    if (ai.usage) {
+      await settleSpend(
+        env,
+        CLAUDE_RESERVE_MICRO,
+        claudeCostMicro(ai.usage.input_tokens, ai.usage.output_tokens)
+      );
+    } else {
+      // Bez udajov o spotrebe rezervaciu nechavame - radsej nadhodnotit.
+      if (!ai.ok) await releaseSpend(env, CLAUDE_RESERVE_MICRO);
+    }
 
     if (!ai.ok || !ai.analysis) {
       // Prepis mame - ulozime ho aj ked analyza padla, praca sa nestrati.

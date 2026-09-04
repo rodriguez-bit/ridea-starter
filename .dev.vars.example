@@ -14,5 +14,8 @@ OPENAI_API_KEY="sk-..."
 BOOTSTRAP_TOKEN="nahodny-retazec-ktory-po-setupe-zmazes"
 
 # Volitelne
-CLAUDE_MODEL="claude-haiku-4-5-20251001"
+CLAUDE_MODEL="claude-haiku-4-5"
+# Denny strop vydavkov na prepis a analyzu v EUR (default 2).
+# 30 nahravok po 2 minutach denne stoji zhruba 0,50 EUR, takze 2 EUR je ~4x rezerva.
+DAILY_SPEND_LIMIT_EUR="2"
 STT_DISABLED=""

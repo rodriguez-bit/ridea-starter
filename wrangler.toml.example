@@ -28,4 +28,4 @@ enabled = true
 # Vars a secrets zdielaju v Cloudflare jeden namespace - hodnota z tohto suboru
 # prepise pri kazdom deployi to, co si nastavil cez `wrangler secret put`.
 [vars]
-CLAUDE_MODEL = "claude-haiku-4-5-20251001"
+CLAUDE_MODEL = "claude-haiku-4-5"

@@ -10,8 +10,11 @@ app.use('/api/*', cors({
   origin: (origin) => {
     if (!origin) return origin;
     // Uprav si na vlastnu domenu, ked nasadis na produkciu.
+    // Frontend bezi na tej istej domene ako API, takze CORS nepotrebuje.
+    // Povolujeme len lokalny vyvoj. Ked budes appku volat z inej domeny,
+    // dopis ju sem menovite - nie cez '*.workers.dev', to je cely internet
+    // cudzich workerov.
     if (origin.startsWith('http://localhost')) return origin;
-    if (origin.endsWith('.workers.dev')) return origin;
     return null;
   },
   allowHeaders: ['Content-Type', 'Authorization'],

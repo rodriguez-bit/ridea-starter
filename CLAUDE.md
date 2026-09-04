@@ -155,6 +155,11 @@ rozdel na kusy po cca 80.
 
 ## Naklady - drz sa toho aj pri novom kode
 
+**Kazde nove platene volanie musi prejst cez `src/lib/spend.ts`.** Najprv
+`reserveSpend()` s konzervativnym odhadom, po odpovedi `settleSpend()` s realnou
+cenou, pri zlyhani `releaseSpend()`. Volanie bez rezervacie je diera v strope -
+strop na jednej ceste nie je ochrana projektu.
+
 1. **Limituj eura, nie pocet volani.** Prepis sa uctuje za minuty audia, model za
    tokeny. Rovnaky pocet volani moze stat 2 eura aj 40.
 2. **Kill switch je vzdy negativny** (`X_DISABLED === '1'`), default v kode je

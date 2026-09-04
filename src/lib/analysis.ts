@@ -1,7 +1,7 @@
 // AI analyza prepisu cez Claude API.
 // Vystupom je striktne JSON, ktory ukladame do ideas.ai_analysis.
 
-const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+const DEFAULT_MODEL = 'claude-haiku-4-5';
 
 export interface Analysis {
   score: number;          // 1-10
@@ -38,11 +38,16 @@ Vyhodnot napad a vrat VYLUCNE JSON v tomto tvare, bez ziadneho textu okolo:
 Pis po slovensky. Ak je prepis prazdny alebo nedava zmysel, daj score 1 a vysvetli to v summary.`;
 }
 
+export interface Usage {
+  input_tokens: number;
+  output_tokens: number;
+}
+
 export async function analyzeTranscript(
   transcript: string,
   apiKey: string,
   opts: { model?: string; companyContext?: string } = {}
-): Promise<{ ok: boolean; analysis?: Analysis; error?: string }> {
+): Promise<{ ok: boolean; analysis?: Analysis; usage?: Usage; error?: string }> {
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -63,15 +68,22 @@ export async function analyzeTranscript(
       return { ok: false, error: `Claude ${resp.status}: ${await resp.text()}` };
     }
 
-    const data = await resp.json() as { content?: Array<{ text?: string }> };
+    const data = await resp.json() as {
+      content?: Array<{ text?: string }>;
+      usage?: { input_tokens?: number; output_tokens?: number };
+    };
     const raw = data.content?.[0]?.text || '';
+    const usage: Usage = {
+      input_tokens: data.usage?.input_tokens ?? 0,
+      output_tokens: data.usage?.output_tokens ?? 0,
+    };
 
     // Model obcas obali JSON do ```json bloku - vytiahneme prvy { ... } blok.
     const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) return { ok: false, error: 'Claude nevratil JSON' };
+    if (!match) return { ok: false, usage, error: 'Claude nevratil JSON' };
 
     const parsed = JSON.parse(match[0]) as Analysis;
-    return { ok: true, analysis: parsed };
+    return { ok: true, analysis: parsed, usage };
   } catch (e: unknown) {
     return { ok: false, error: `Analyza: ${e instanceof Error ? e.message : 'unknown'}` };
   }

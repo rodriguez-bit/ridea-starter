@@ -10,6 +10,8 @@ export interface Env {
   BOOTSTRAP_TOKEN?: string;
 
   CLAUDE_MODEL?: string;
+  // Denny strop vydavkov na prepis a analyzu v EUR (default 2). Pozri lib/spend.ts.
+  DAILY_SPEND_LIMIT_EUR?: string;
   // Kill switch: negativny, default = zapnute. NEDAVAJ ho do wrangler.toml [vars].
   STT_DISABLED?: string;
 }

@@ -237,6 +237,12 @@ co ludia obvykle chcu ako prve:
 Toto je jedina cast, kde sa da realne popalit. Tri pravidla, ktore stoja za
 skutocne prestrelene faktury:
 
+**0. Strop uz v kode je - over si, ze ti sedi.** Kazda nahravka najprv rezervuje
+odhad ceny v tabulke `spend` a az potom sa vola platena sluzba. Ked by rezervacia
+presiahla denny strop, nahravka sa nespracuje a dostane stav `error` s vysvetlenim.
+Default su 2 EUR na den (30 nahravok po 2 minutach stoji zhruba 0,50 EUR), meni sa
+cez `DAILY_SPEND_LIMIT_EUR`. Zvysok tejto sekcie je o tom, preco to tam je.
+
 **1. Limituj eura, nie pocet volani.** Prepis sa uctuje za minuty audia, Claude za
 tokeny. Dvesto volani moze stat 2 eura aj 40 eur - zalezi na dlzke. Ak si robis
 strop, rataj cenu, nie pocty.

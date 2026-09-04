@@ -10,7 +10,7 @@ const HASH_LENGTH = 32;
 export const DUMMY_PASSWORD_HASH =
   `pbkdf2:${ITERATIONS}:${'0'.repeat(32)}:${'0'.repeat(64)}`;
 
-function timingSafeEqual(a: string, b: string): boolean {
+export function timingSafeEqual(a: string, b: string): boolean {
   let diff = a.length ^ b.length;
   const len = Math.max(a.length, b.length);
   for (let i = 0; i < len; i++) {

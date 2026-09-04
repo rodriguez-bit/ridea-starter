@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { signJWT } from '../lib/jwt';
-import { hashPassword, verifyPassword, hashIp, DUMMY_PASSWORD_HASH } from '../lib/password';
+import { hashPassword, verifyPassword, hashIp, timingSafeEqual, DUMMY_PASSWORD_HASH } from '../lib/password';
 import { authMiddleware } from '../middleware/auth';
 import type { Env, User } from '../types';
 
@@ -60,7 +60,10 @@ app.post('/login', async (c) => {
       user: { id: row.id, email: row.email, display_name: row.display_name, role: row.role },
     });
   } catch (e: unknown) {
-    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
+    // Interne chyby (SQL, upstream) nepatria do odpovede - vidiet ich v
+    // `npx wrangler tail`.
+    console.error(e);
+    return c.json({ error: 'Chyba servera' }, 500);
   }
 });
 
@@ -74,11 +77,31 @@ app.post('/bootstrap', async (c) => {
   try {
     if (!c.env.BOOTSTRAP_TOKEN) return c.json({ error: 'Bootstrap je vypnuty' }, 403);
 
+    // Rovnaky sliding-window limit ako na logine. Bez neho sa da BOOTSTRAP_TOKEN
+    // skusat donekonecna, kym ho po setupe niekto nezmaze.
+    const ip = c.req.header('CF-Connecting-IP') || '0.0.0.0';
+    const ipHash = await hashIp(ip, c.env.JWT_SECRET);
+    const recent = await c.env.DB
+      .prepare(`SELECT COUNT(*) AS n FROM login_attempts
+                WHERE ip_hash = ? AND created_at > datetime('now', '${WINDOW}')`)
+      .bind(ipHash)
+      .first<{ n: number }>();
+    if ((recent?.n ?? 0) >= MAX_ATTEMPTS) {
+      return c.json({ error: 'Prilis vela pokusov, skus o 5 minut' }, 429);
+    }
+    await c.env.DB
+      .prepare('INSERT INTO login_attempts (ip_hash) VALUES (?)')
+      .bind(ipHash)
+      .run();
+
     const { token, email, password, display_name } = await c.req.json<{
       token?: string; email?: string; password?: string; display_name?: string;
     }>();
 
-    if (token !== c.env.BOOTSTRAP_TOKEN) return c.json({ error: 'Neplatny token' }, 403);
+    // Constant-time porovnanie: `!==` prezradi dlzku zhodneho prefixu casom.
+    if (!token || !timingSafeEqual(token, c.env.BOOTSTRAP_TOKEN)) {
+      return c.json({ error: 'Neplatny token' }, 403);
+    }
     if (!email || !password) return c.json({ error: 'Zadaj email a heslo' }, 400);
     if (password.length < 10) return c.json({ error: 'Heslo min. 10 znakov' }, 400);
 
@@ -96,7 +119,10 @@ app.post('/bootstrap', async (c) => {
 
     return c.json({ ok: true, id: r.meta.last_row_id });
   } catch (e: unknown) {
-    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
+    // Interne chyby (SQL, upstream) nepatria do odpovede - vidiet ich v
+    // `npx wrangler tail`.
+    console.error(e);
+    return c.json({ error: 'Chyba servera' }, 500);
   }
 });
 
@@ -125,7 +151,10 @@ app.post('/users', authMiddleware, async (c) => {
 
     return c.json({ ok: true, id: r.meta.last_row_id });
   } catch (e: unknown) {
-    return c.json({ error: e instanceof Error ? e.message : 'Unknown error' }, 500);
+    // Interne chyby (SQL, upstream) nepatria do odpovede - vidiet ich v
+    // `npx wrangler tail`.
+    console.error(e);
+    return c.json({ error: 'Chyba servera' }, 500);
   }
 });
 
