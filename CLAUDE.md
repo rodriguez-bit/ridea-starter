@@ -136,6 +136,8 @@ rozdel na kusy po cca 80.
 
 ## Bezpecnost - drz sa toho aj pri novom kode
 
+**Kluce nikdy cez chat.** Ked vedies niekoho setupom, necha si ich napisat do suboru (`secrets.json`, `bootstrap.json` - oba su v `.gitignore`), nahraj ich cez `npx wrangler secret bulk` a subor hned zmaz. Nepytaj kluc ani heslo do konverzacie a nikdy ich nevypisuj spat.
+
 1. **Kazdy endpoint, ktory berie email**, musi vratit rovnaku odpoved pre
    existujuci aj neexistujuci ucet: rovnaky HTTP status, rovnake telo, rovnaky cas.
    Inak sa cez neho da zistovat, kto je registrovany.

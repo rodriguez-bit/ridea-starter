@@ -123,20 +123,35 @@ npx wrangler d1 migrations apply ridea-starter --remote
 
 ### 5. Nastav tajomstva
 
-Nikdy nedavaj kluce do suborov. Vzdy takto:
+Kluce patria do Cloudflare secrets, nie do kodu a nie do `wrangler.toml`.
+Najrychlejsie je nahrat ich naraz zo suboru:
 
 ```bash
-npx wrangler secret put JWT_SECRET          # nahodny retazec, min 32 znakov
-npx wrangler secret put ANTHROPIC_API_KEY
-npx wrangler secret put ELEVENLABS_API_KEY  # alebo OPENAI_API_KEY
-npx wrangler secret put BOOTSTRAP_TOKEN     # nahodny retazec, po setupe zmazes
+cat > secrets.json <<'EOF'
+{
+  "JWT_SECRET": "nahodny-retazec-min-32-znakov",
+  "ANTHROPIC_API_KEY": "sk-ant-...",
+  "ELEVENLABS_API_KEY": "sk_...",
+  "BOOTSTRAP_TOKEN": "nahodny-retazec-po-setupe-zmazes"
+}
+EOF
+
+npx wrangler secret bulk secrets.json
+rm secrets.json
 ```
+
+Namiesto `ELEVENLABS_API_KEY` mozes dat `OPENAI_API_KEY`, staci jeden z nich.
+`secrets.json` je v `.gitignore`, ale aj tak ho po nahrati hned zmaz.
 
 Nahodny retazec si vygenerujes napr. takto:
 
 ```bash
 node -e "console.log(crypto.randomUUID() + crypto.randomUUID())"
 ```
+
+Po jednom sa to da aj interaktivne (`npx wrangler secret put JWT_SECRET`), len
+vtedy kluc prejde cez terminal - ked ta setupom vedie AI asistent, drz sa
+suborovej cesty vyssie, nech kluce neskoncia v chate.
 
 ### 6. Nasad
 
@@ -153,6 +168,8 @@ curl -X POST https://TVOJA-URL/api/auth/bootstrap \
   -H "Content-Type: application/json" \
   -d '{"token":"TVOJ_BOOTSTRAP_TOKEN","email":"ty@firma.sk","password":"dlhe-heslo-min-10","display_name":"Tvoje meno"}'
 ```
+
+Heslo musi mat aspon 10 znakov, kratsie endpoint odmietne.
 
 Potom token hned zmaz, uz ho nepotrebujes:
 

@@ -5,3 +5,8 @@ dist/
 *.log
 .DS_Store
 wrangler.toml
+
+# Docasne subory so secretmi pri setupe (viz README krok 5 a 7).
+# Vznikaju len na par sekund, ale jeden `git add .` medzitym staci.
+secrets.json
+bootstrap.json
